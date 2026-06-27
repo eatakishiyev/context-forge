@@ -40,6 +40,26 @@ def _sample_trace() -> dict:
         return json.load(f)
 
 
+ASSETS_DIR = os.path.join(REPO_ROOT, "assets")
+_CTYPES = {".png": "image/png", ".ico": "image/x-icon", ".svg": "image/svg+xml",
+           ".webmanifest": "application/manifest+json", ".json": "application/json"}
+
+
+def _static(req_path: str):
+    """Serve a file from assets/ only — no path traversal."""
+    rel = os.path.normpath(req_path.lstrip("/"))
+    path = os.path.join(REPO_ROOT, rel)
+    try:
+        inside = os.path.commonpath([os.path.abspath(path), ASSETS_DIR]) == ASSETS_DIR
+    except ValueError:
+        return None
+    if not (inside and os.path.isfile(path)):
+        return None
+    with open(path, "rb") as f:
+        data = f.read()
+    return data, _CTYPES.get(os.path.splitext(path)[1].lower(), "application/octet-stream")
+
+
 def _score(payload: dict) -> dict:
     trace = Trace.from_dict(payload.get("trace", {}))
     model = payload.get("model") or trace.model
@@ -101,7 +121,15 @@ def make_handler():
             elif self.path == "/health":
                 self._send_json(200, {"status": "ok"})
             else:
-                self._send_json(404, {"error": "not found"})
+                req = self.path.split("?", 1)[0]
+                aliases = {"/favicon.ico": "/assets/favicon.ico",
+                           "/manifest.webmanifest": "/assets/manifest.webmanifest"}
+                target = aliases.get(req, req if req.startswith("/assets/") else None)
+                served = _static(target) if target else None
+                if served:
+                    self._send(200, served[0], served[1])
+                else:
+                    self._send_json(404, {"error": "not found"})
 
         def do_POST(self):
             fn = ROUTES.get(self.path)

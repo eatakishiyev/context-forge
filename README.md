@@ -165,11 +165,20 @@ This is the start of the real moat: a corpus of per-model knees fitted from eval
 
 ## Use cases
 
+Each is a written walkthrough plus a runnable, dependency-free demo.
+
 - **[OpenClaw](docs/use-cases/openclaw.md)** — a 24/7 personal agent whose context
-  balloons across endless tool calls. Drop the proxy in front of it: on a synthetic
-  long session, **228k → 20k tokens (~91% smaller)**, rot **moderate → low**, and a
-  buried standing rule the agent had forgotten is lifted back to the window edge.
-  Runnable: [`examples/openclaw_proxy.py`](examples/openclaw_proxy.py).
+  balloons across endless tool calls. **228k → 20k tokens (~91% smaller)**, rot
+  moderate → low, a forgotten standing rule lifted back to the window edge.
+  → [`examples/openclaw_proxy.py`](examples/openclaw_proxy.py)
+- **[OpenHands](docs/use-cases/openhands.md)** — an autonomous coding agent that
+  buries an early "don't touch the frozen module" constraint under steps of test
+  output. **171k → 20k (~88%)**, constraint re-anchored to the edge.
+  → [`examples/openhands_demo.py`](examples/openhands_demo.py)
+- **[Support agent](docs/use-cases/support-agent.md)** — a long support chat where
+  the load-bearing refund fact rots mid-window. **252k → 20k (~92%)**; pairs with
+  the benchmark to measure the *accuracy* delta, not just tokens.
+  → [`examples/support_agent_demo.py`](examples/support_agent_demo.py)
 
 ## Why this is defensible
 
