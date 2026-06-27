@@ -1,6 +1,20 @@
-# ContextForge
+<p align="center">
+  <img src="assets/logo.svg" alt="ContextForge" width="560">
+</p>
 
-**Stop context rot before it silently breaks your agents.**
+<p align="center">
+  <b>Stop context rot before it silently breaks your agents.</b><br>
+  A context compiler for LLM agents — score · compress · reorder · budget.
+</p>
+
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#the-benchmark">Benchmark</a> ·
+  <a href="STRATEGY.md">Strategy</a> ·
+  <a href="#license">License</a>
+</p>
+
+---
 
 ContextForge is a *context compiler* that sits between your app and the model. It
 **scores**, **compresses**, **reorders**, and **budgets** everything entering the
