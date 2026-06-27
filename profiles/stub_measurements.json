@@ -1,0 +1,46 @@
+{
+  "model": "stub",
+  "measurements": [
+    [
+      3275,
+      1.0
+    ],
+    [
+      22407,
+      1.0
+    ],
+    [
+      60656,
+      1.0
+    ],
+    [
+      118026,
+      1.0
+    ],
+    [
+      194543,
+      1.0
+    ],
+    [
+      290188,
+      0.0
+    ],
+    [
+      433619,
+      0.0
+    ],
+    [
+      624924,
+      0.0
+    ]
+  ],
+  "fitted_profile": {
+    "name": "stub",
+    "danger_start": 204108,
+    "danger_full": 280624,
+    "weights": null,
+    "n_samples": 8,
+    "fit_r2": 1.0,
+    "notes": "Fitted from 8 measurements (R\u00b2=1.0)."
+  }
+}

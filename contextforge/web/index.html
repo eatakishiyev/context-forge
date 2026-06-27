@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ContextForge — what the model actually saw</title>
+<style>
+  :root {
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2b3440;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --accent2:#7ee787;
+    --low:#3fb950; --moderate:#d29922; --high:#db6d28; --severe:#f85149;
+    --add:#388bfd; --drop:#f85149; --trim:#d29922;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans);
+         font-size:14px; line-height:1.5; }
+  header { padding:18px 24px; border-bottom:1px solid var(--border);
+           display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin:0; letter-spacing:.3px; }
+  header h1 .spark { color:var(--accent2); }
+  header .tag { color:var(--muted); font-size:13px; }
+  .wrap { display:grid; grid-template-columns:380px 1fr; gap:0; min-height:calc(100vh - 59px); }
+  .left { border-right:1px solid var(--border); padding:18px; overflow:auto; }
+  .right { padding:22px; overflow:auto; }
+  label.fld { display:block; font-size:12px; color:var(--muted);
+              text-transform:uppercase; letter-spacing:.5px; margin:14px 0 6px; }
+  textarea { width:100%; height:230px; background:#0a0e14; color:var(--fg);
+             border:1px solid var(--border); border-radius:8px; padding:10px;
+             font-family:var(--mono); font-size:12px; resize:vertical; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .row.btns { margin-top:14px; }
+  button { background:var(--accent); color:#0d1117; border:none; border-radius:7px;
+           padding:9px 16px; font-weight:600; cursor:pointer; font-size:13px; }
+  button.ghost { background:var(--panel2); color:var(--fg); border:1px solid var(--border); }
+  button:hover { filter:brightness(1.08); }
+  input[type=number]{ width:96px; background:#0a0e14; color:var(--fg);
+           border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-family:var(--mono); }
+  input[type=range]{ flex:1; }
+  .toggles { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; }
+  .toggles label { font-size:13px; color:var(--fg); display:flex; gap:5px; align-items:center; cursor:pointer; }
+  .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+
+  .cards { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .card h3 { margin:0 0 12px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .bigstat { font-size:30px; font-weight:700; font-family:var(--mono); }
+  .delta { font-size:14px; font-weight:600; }
+  .delta.good { color:var(--accent2); }
+  .sub { color:var(--muted); font-size:12px; margin-top:4px; }
+
+  .gauge-num { font-size:30px; font-weight:700; font-family:var(--mono); }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px;
+          font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+  .lvl-low{background:rgba(63,185,80,.18); color:var(--low);}
+  .lvl-moderate{background:rgba(210,153,34,.18); color:var(--moderate);}
+  .lvl-high{background:rgba(219,109,40,.18); color:var(--high);}
+  .lvl-severe{background:rgba(248,81,73,.2); color:var(--severe);}
+
+  .comp { margin-top:10px; }
+  .comp .crow { display:flex; align-items:center; gap:8px; margin:6px 0; }
+  .comp .cname { width:108px; font-size:12px; color:var(--muted); font-family:var(--mono); }
+  .bar { flex:1; height:8px; background:#0a0e14; border-radius:6px; overflow:hidden; }
+  .bar > i { display:block; height:100%; border-radius:6px; }
+  .comp .cval { width:40px; text-align:right; font-family:var(--mono); font-size:12px; }
+
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .chip { font-family:var(--mono); font-size:12px; padding:4px 10px; border-radius:7px;
+          background:var(--panel2); border:1px solid var(--border); }
+  .chip b { color:var(--accent2); }
+
+  .notes { margin-top:12px; }
+  .note { background:rgba(210,153,34,.08); border-left:3px solid var(--moderate);
+          padding:7px 10px; border-radius:4px; font-size:12.5px; margin:6px 0; color:#e6c07b; }
+
+  section.block { margin-top:24px; }
+  section.block > h2 { font-size:15px; margin:0 0 4px; }
+  section.block > .sub { margin-bottom:12px; }
+
+  .item { background:var(--panel); border:1px solid var(--border); border-radius:10px;
+          padding:10px 12px; margin:8px 0; }
+  .item .meta { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+  .role { font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:6px;
+          background:var(--panel2); border:1px solid var(--border); }
+  .role.system{ color:var(--accent); }
+  .role.user{ color:var(--accent2); }
+  .role.assistant{ color:#d2a8ff; }
+  .role.tool{ color:var(--muted); }
+  .tag2 { font-size:11px; padding:2px 8px; border-radius:6px; font-weight:600; }
+  .tag-anchor{ background:rgba(126,231,135,.16); color:var(--accent2); }
+  .tag-trim{ background:rgba(210,153,34,.16); color:var(--trim); }
+  .sal { margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .item.anchor { border-color:var(--accent2); box-shadow:0 0 0 1px rgba(126,231,135,.25) inset; }
+  .item .body { font-family:var(--mono); font-size:12px; color:#c9d1d9; white-space:pre-wrap;
+                max-height:84px; overflow:hidden; position:relative; }
+  .item .body.open { max-height:none; }
+  .item .more { color:var(--accent); cursor:pointer; font-size:12px; margin-top:4px; display:inline-block; }
+  mark { background:rgba(88,166,255,.28); color:#cfe3ff; border-radius:3px; padding:0 2px; }
+
+  .actlist { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .actlist .a { padding:4px 0; border-bottom:1px solid var(--border); display:flex; gap:10px; }
+  .atype { width:90px; }
+  .atype.dedup,.atype.drop{ color:var(--drop); }
+  .atype.truncate{ color:var(--trim); }
+  .atype.anchor{ color:var(--accent2); }
+  .atype.normalize,.atype.reorder{ color:var(--accent); }
+  .empty { color:var(--muted); font-style:italic; }
+  .spinner { color:var(--muted); }
+  .err { color:var(--severe); font-family:var(--mono); font-size:12px; white-space:pre-wrap; }
+  footer { color:var(--muted); font-size:12px; padding:16px 24px; border-top:1px solid var(--border); }
+  @media (max-width:1000px){
+    .wrap { grid-template-columns:1fr; }
+    .left { border-right:none; border-bottom:1px solid var(--border); }
+    .cards { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Context<span class="spark">Forge</span></h1>
+  <span class="tag">a context compiler — score · compress · reorder · budget · <em>what the model actually saw</em></span>
+</header>
+
+<div class="wrap">
+  <div class="left">
+    <label class="fld">Trace (JSON)</label>
+    <textarea id="trace" spellcheck="false"></textarea>
+    <div class="row btns">
+      <button id="run">Compile</button>
+      <button class="ghost" id="scoreBtn">Score only</button>
+      <button class="ghost" id="sampleBtn">Load sample</button>
+    </div>
+
+    <label class="fld">Token budget</label>
+    <div class="row">
+      <input type="number" id="budgetNum" value="30000" min="0" step="1000" />
+      <input type="range" id="budgetRange" min="0" max="120000" step="1000" value="30000" />
+    </div>
+    <div class="hint">0 = no hard ceiling (compress only)</div>
+
+    <label class="fld">Passes</label>
+    <div class="toggles">
+      <label><input type="checkbox" id="p_dedup" checked> dedup</label>
+      <label><input type="checkbox" id="p_truncate" checked> truncate</label>
+      <label><input type="checkbox" id="p_reorder" checked> reorder</label>
+      <label><input type="checkbox" id="p_anchor" checked> anchor</label>
+    </div>
+
+    <label class="fld">Model (selects rot profile)</label>
+    <input type="number" style="display:none">
+    <input id="model" placeholder="e.g. claude-opus-4-8 (optional)"
+           style="width:100%;background:#0a0e14;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-family:var(--mono);font-size:12px;">
+    <div class="hint" id="profHint"></div>
+  </div>
+
+  <div class="right" id="results">
+    <div class="spinner">Loading sample…</div>
+  </div>
+</div>
+
+<footer>ContextForge · open-source context compiler · the rot score is a risk estimate — calibrate it against your own evals.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const LVL = v => v<25?'low':v<50?'moderate':v<75?'high':'severe';
+const LVLC = {low:'var(--low)',moderate:'var(--moderate)',high:'var(--high)',severe:'var(--severe)'};
+const fmt = n => (n||0).toLocaleString();
+const esc = s => (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function sync(a,b){ $(a).addEventListener('input',()=>$(b).value=$(a).value); }
+sync('budgetNum','budgetRange'); sync('budgetRange','budgetNum');
+
+async function loadSample(){
+  const r = await fetch('/api/sample'); const t = await r.json();
+  $('trace').value = JSON.stringify(t, null, 2);
+}
+function parseTrace(){
+  try { return JSON.parse($('trace').value); }
+  catch(e){ throw new Error('Trace is not valid JSON:\n'+e.message); }
+}
+function payload(){
+  return {
+    trace: parseTrace(),
+    budget: parseInt($('budgetNum').value)||0,
+    model: $('model').value.trim()||null,
+    passes: {dedup:$('p_dedup').checked, truncate:$('p_truncate').checked,
+             reorder:$('p_reorder').checked, anchor:$('p_anchor').checked},
+  };
+}
+async function post(path, body){
+  const r = await fetch(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error||('HTTP '+r.status));
+  return j;
+}
+
+function gauge(title, rep){
+  const lvl = rep.level, comps = rep.components;
+  const order = ['load','redundancy','middle_burial','fragmentation'];
+  const rows = order.map(k=>{
+    const v = comps[k]||0;
+    return `<div class="crow"><span class="cname">${k}</span>
+      <span class="bar"><i style="width:${v}%;background:${LVLC[LVL(v)]}"></i></span>
+      <span class="cval">${v.toFixed(0)}</span></div>`;
+  }).join('');
+  return `<div class="card">
+    <h3>${title}</h3>
+    <div class="row" style="gap:10px;align-items:baseline">
+      <span class="gauge-num" style="color:${LVLC[lvl]}">${rep.total.toFixed(0)}</span>
+      <span style="color:var(--muted)">/ 100</span>
+      <span class="pill lvl-${lvl}">${lvl}</span>
+    </div>
+    <div class="comp">${rows}</div>
+  </div>`;
+}
+
+function tokenCard(res){
+  const saved = res.tokens_saved, pct = res.savings_pct;
+  return `<div class="card">
+    <h3>Tokens</h3>
+    <div class="bigstat">${fmt(res.tokens_before)} <span style="color:var(--muted)">→</span> ${fmt(res.tokens_after)}</div>
+    <div class="delta good">−${fmt(saved)} tokens (${pct.toFixed(1)}% smaller)</div>
+    <div class="sub">${res.n_items_before} items → ${res.n_items_after} items entering the window</div>
+  </div>`;
+}
+
+function actionsCard(actions){
+  const roll = {};
+  actions.forEach(a=>{ roll[a.type]=roll[a.type]||{n:0,tok:0}; roll[a.type].n++; roll[a.type].tok+=a.tokens_saved; });
+  const chips = Object.entries(roll).map(([t,v])=>
+    `<span class="chip">${t} <b>×${v.n}</b> ${v.tok>0?('· −'+fmt(v.tok)+' tok'):'· +context'}</span>`).join('') || '<span class="empty">no transformations</span>';
+  return `<div class="card"><h3>Actions applied</h3><div class="chips">${chips}</div></div>`;
+}
+
+function highlight(text){
+  // highlight likely load-bearing tokens (IDs, money, card digits) for the demo
+  return esc(text).replace(/\b(ACC-\d+|ending \d{4}|\$\d[\d,.]*)\b/g,'<mark>$1</mark>');
+}
+
+function itemEl(it){
+  const gen = it.meta && it.meta.cf_generated;
+  const trimmed = it.meta && it.meta.cf_compressed;
+  const body = it.content||'';
+  const long = body.length>260;
+  const sal = (it.salience!=null)? it.salience.toFixed(2):'—';
+  const tags = [];
+  if(gen) tags.push('<span class="tag2 tag-anchor">anchor</span>');
+  if(trimmed) tags.push(`<span class="tag2 tag-trim">${trimmed}</span>`);
+  return `<div class="item ${gen?'anchor':''}">
+    <div class="meta">
+      <span class="role ${it.role}">${it.role}</span>
+      <span style="font-size:11px;color:var(--muted)">${it.kind}</span>
+      ${tags.join('')}
+      <span class="sal">salience ${sal}</span>
+    </div>
+    <div class="body ${long?'':'open'}">${highlight(body)}</div>
+    ${long?'<span class="more" onclick="this.previousElementSibling.classList.toggle(\'open\');this.textContent=this.previousElementSibling.classList.contains(\'open\')?\'show less\':\'show more\'">show more</span>':''}
+  </div>`;
+}
+
+function removedSection(actions){
+  const removed = actions.filter(a=>a.type==='dedup'||a.type==='drop');
+  if(!removed.length) return '';
+  const rows = removed.map(a=>`<div class="a"><span class="atype ${a.type}">${a.type}</span><span>${esc(a.target||'')}</span><span style="margin-left:auto">−${fmt(a.tokens_saved)} tok</span><span style="color:var(--muted)">${esc(a.detail)}</span></div>`).join('');
+  return `<section class="block"><h2>Removed from the window (${removed.length})</h2>
+    <div class="sub">These never reached the model — the audit trail.</div>
+    <div class="actlist">${rows}</div></section>`;
+}
+
+function renderCompile(res){
+  const html = `
+    <div class="cards">
+      ${gauge('Rot risk — before', res.rot_before)}
+      ${gauge('Rot risk — after', res.rot_after)}
+      ${tokenCard(res)}
+      ${actionsCard(res.actions)}
+    </div>
+    ${res.rot_before.notes && res.rot_before.notes.length ? '<div class="notes">'+res.rot_before.notes.map(n=>`<div class="note">${esc(n)}</div>`).join('')+'</div>':''}
+    <section class="block">
+      <h2>What the model actually saw <span style="color:var(--muted);font-weight:400">(${res.items.length} items, in order)</span></h2>
+      <div class="sub">Green = ContextForge anchor (load-bearing facts lifted to the window edges). Amber = trimmed.</div>
+      ${res.items.map(itemEl).join('')}
+    </section>
+    ${removedSection(res.actions)}
+  `;
+  $('results').innerHTML = html;
+}
+
+function renderScore(j){
+  const r = j.report;
+  $('results').innerHTML = `<div class="cards">${gauge('Rot risk', r)}
+    <div class="card"><h3>Context</h3>
+      <div class="bigstat">${fmt(r.tokens)}</div><div class="sub">tokens across ${r.n_items} items</div>
+      <div class="sub" style="margin-top:8px">profile <b>${j.profile.name}</b> · knee ${fmt(j.profile.danger_start)}–${fmt(j.profile.danger_full)}</div>
+    </div></div>
+    ${r.notes&&r.notes.length?'<div class="notes">'+r.notes.map(n=>`<div class="note">${esc(n)}</div>`).join('')+'</div>':''}`;
+}
+
+async function run(fn){
+  try {
+    $('results').innerHTML='<div class="spinner">Compiling…</div>';
+    await fn();
+  } catch(e){
+    $('results').innerHTML='<div class="err">'+esc(e.message)+'</div>';
+  }
+}
+$('run').onclick = ()=>run(async()=>renderCompile(await post('/api/compile',payload())));
+$('scoreBtn').onclick = ()=>run(async()=>renderScore(await post('/api/score',payload())));
+$('sampleBtn').onclick = ()=>run(async()=>{ await loadSample(); renderCompile(await post('/api/compile',payload())); });
+
+const FALLBACK = {task:"What is the launch date?",model:null,items:[
+  {role:"system",content:"You are a release assistant.",pinned:true},
+  {role:"user",content:"hey, lots of noise here..."},
+  {role:"assistant",kind:"fact",content:"CRITICAL: the launch date is 2026-09-01."},
+  {role:"tool",kind:"tool_result",content:"log ".repeat(80)},
+  {role:"user",content:"when is the launch?"}]};
+
+(async()=>{
+  try {
+    await loadSample();
+    await run(async()=>renderCompile(await post('/api/compile',payload())));
+  } catch(e){
+    $('trace').value = JSON.stringify(FALLBACK,null,2);
+    $('results').innerHTML =
+      '<div class="card"><h3>Backend not connected</h3>'+
+      '<div class="sub">This dashboard needs the ContextForge server to run the compiler. Start it with:</div>'+
+      '<div class="chip" style="margin-top:10px;display:inline-block">contextforge ui --open</div>'+
+      '<div class="sub" style="margin-top:10px">Then edit the trace on the left and hit <b>Compile</b>.</div></div>';
+  }
+})();
+</script>
+</body>
+</html>

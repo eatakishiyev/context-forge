@@ -1,0 +1,11 @@
+{
+  "stub": {
+    "name": "stub",
+    "danger_start": 204108,
+    "danger_full": 280624,
+    "weights": null,
+    "n_samples": 8,
+    "fit_r2": 1.0,
+    "notes": "Fitted from 8 measurements (R\u00b2=1.0)."
+  }
+}

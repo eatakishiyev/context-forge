@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "contextforge"
+version = "0.1.0"
+description = "A context compiler for LLM agents — score, compress, reorder, and budget everything entering the context window."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "ContextForge" }]
+keywords = ["llm", "context", "agents", "compression", "context-rot", "observability"]
+dependencies = []
+
+[project.optional-dependencies]
+# Accurate token counting (falls back to a heuristic if absent).
+tokens = ["tiktoken>=0.7"]
+# Real accuracy measurement against a frontier model in the benchmark harness.
+anthropic = ["anthropic>=0.40"]
+dev = ["pytest>=7"]
+all = ["tiktoken>=0.7", "anthropic>=0.40", "pytest>=7"]
+
+[project.scripts]
+contextforge = "contextforge.cli:main"
+cf = "contextforge.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["contextforge*"]
+
+[tool.setuptools.package-data]
+contextforge = ["web/*.html"]
+
+[project.urls]
+Homepage = "https://github.com/contextforge/contextforge"
