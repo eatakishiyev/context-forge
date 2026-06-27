@@ -10,6 +10,7 @@
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
   <a href="#the-benchmark">Benchmark</a> ·
+  <a href="#use-cases">Use cases</a> ·
   <a href="STRATEGY.md">Strategy</a> ·
   <a href="#license">License</a>
 </p>
@@ -162,6 +163,14 @@ contextforge score examples/sample_trace.json --model claude-opus-4-8
 Profiles live in `profiles/profiles.json` (override with `$CONTEXTFORGE_PROFILES`).
 This is the start of the real moat: a corpus of per-model knees fitted from evals.
 
+## Use cases
+
+- **[OpenClaw](docs/use-cases/openclaw.md)** — a 24/7 personal agent whose context
+  balloons across endless tool calls. Drop the proxy in front of it: on a synthetic
+  long session, **228k → 20k tokens (~91% smaller)**, rot **moderate → low**, and a
+  buried standing rule the agent had forgotten is lifted back to the window edge.
+  Runnable: [`examples/openclaw_proxy.py`](examples/openclaw_proxy.py).
+
 ## Why this is defensible
 
 The moat isn't any single model call — it's **the eval data and the policies**: a
@@ -197,7 +206,9 @@ bench/               the reproducible benchmark harness
   benchmark.py       accuracy + token delta on a suite
   sweep.py           accuracy-vs-size sweep for calibration
 profiles/            fitted per-model rot profiles
-examples/            sample trace
+docs/use-cases/      integration use cases (e.g. OpenClaw)
+assets/              logo, app icons, favicon, social card
+examples/            sample trace + openclaw_proxy.py
 tests/               pytest suite
 ```
 
